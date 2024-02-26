@@ -88,6 +88,7 @@ class TaskScheduler:
 scheduler = TaskScheduler()
 scheduler.add_queue("consumer1")
 scheduler.add_queue("consumer2")
+# Manually adding tasks for simulation, but generally they are handled by producer API
 scheduler.add_task("consumer1", lambda: print("Task 1 for consumer1"), 2000)
 scheduler.add_task("consumer2", lambda: print("Task 1 for consumer2"), 3000)
 
