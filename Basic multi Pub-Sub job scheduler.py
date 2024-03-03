@@ -16,6 +16,9 @@ class SchedulerQueue:
         self.queue = []
         self.stop_flag = False
 
+    def add_task(self, task):
+        heapq.heappush(self.queue, task)
+
 class Consumer(threading.Thread):
     def __init__(self, scheduler_queue):
         super().__init__()
@@ -27,11 +30,12 @@ class Consumer(threading.Thread):
                 next_task = heapq.heappop(self.queue.queue)
                 if next_task.timestamp_ms <= time.time() * 1000:
                     try:
+                        # Try to execute task
                         next_task.runnable()
                     except Exception as e:
                         print(f"Error running task: {e}")
                 else:
-                    next_task.timestamp_ms+=25 # Add 25 ms delay and reschedule
+                    next_task.timestamp_ms+=5 # Add 5 ms delay and reschedule
                     heapq.heappush(self.queue.queue, next_task)  # Reschedule if not due yet
             time.sleep(0.1)  # Prevent busy waiting
 
@@ -54,15 +58,30 @@ class TaskScheduler:
         self.queues = {}  # Map consumer names to their queues
 
     def add_queue(self, consumer_name):
+        """
+            Args:
+                consumer_name: identifier for which new scheduler queue is created 
+        """
         self.queues[consumer_name] = SchedulerQueue()
 
     def add_task(self, consumer_name, runnable, delay_ms):
+        """
+        API to add tasks to queue for consumer_name
+            Args:
+                consumer_name: identifier to which consumer queue task needs to added
+                runnable: executable function
+                delay_ms: time in ms after which the task has to be picked for execution from now
+        """
         if consumer_name not in self.queues:
             raise ValueError(f"Consumer '{consumer_name}' not found")
         task = Task(runnable, delay_ms)
         self.queues[consumer_name].add_task(task)
 
     def start_producers(self, producer_names):
+        """
+            Args:
+                producer_names: list of consumer names for which producers are created
+        """
         for name in producer_names:
             if name not in self.queues:
                 raise ValueError(f"Queue for producer '{name}' not found")
